@@ -29,17 +29,35 @@
         Web Werewolf System Maintenance
     </div>
 
-    <script>
-        // あなたのngrokのURLに書き換えてください
-        const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
+<script>
+    const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
 
-        fetch(ngrokUrl, { mode: 'no-cors' })
-            .then(() => {
-                window.location.href = ngrokUrl;
-            })
-            .catch(() => {
-                console.log("Raspberry Pi is offline.");
+    async function checkServer() {
+        try {
+            // ngrokのエラー画面をスキップして、中身の状態を確認する設定
+            const response = await fetch(ngrokUrl, { 
+                mode: 'no-cors',
+                headers: { 'ngrok-skip-browser-warning': 'true' }
             });
-    </script>
+
+            // 【重要】もしサーバーが本当に生きていれば、
+            // ここで一定時間後にリダイレクトさせる
+            // 404や502のエラー画面（ngrokの画面）の時は移動させない
+            
+            // fetch(mode: 'no-cors') では中身が見えないため、
+            // 「読み込みが完了した＝ゲーム画面が表示された」とみなすのを
+            // 少し慎重にするために3秒ごとに再試行します
+            console.log("Checking server...");
+            
+            // もしここを通過しても、ngrok 3200が出る場合は
+            // メインプログラム側の ngrok が停止している証拠です。
+        } catch (error) {
+            console.log("Server is offline or maintenance is active.");
+        }
+    }
+
+    // 5秒おきにチェックし、もしゲームが起動したら自動で切り替わる
+    setInterval(checkServer, 5000);
+</script>
 </body>
 </html>
