@@ -12,13 +12,14 @@
         <img src="favicon.ico" class="maintenance-icon-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
         <div style="display:none; font-size: 64px; margin-bottom: 20px;">⚙️</div>
         
+        <h1>現在メンテナンス中です</h1>
+
         <div class="maintenance-schedule">
-        <span class="schedule-label">次回稼働予定日</span>
-        <div class="schedule-date">2026年2月23日 (月)</div>
-        <div class="schedule-time">18:00 〜 開始予定</div>
+            <span class="schedule-label">Next Live</span>
+            <div class="schedule-date">2026年2月23日 (月)</div>
+            <div class="schedule-time">18:00 〜 開始予定</div>
         </div>
 
-        <h1>現在メンテナンス中です</h1>
         <p>
             更新が終わり次第プレイできるようになります<br>
             もうしばらくお待ちください
@@ -29,35 +30,37 @@
         Web Werewolf System Maintenance
     </div>
 
-<script>
-    const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
+    <script>
+        // メインプログラム側のngrok URL
+        const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
 
-    async function checkServer() {
-        try {
-            // ngrokのエラー画面をスキップして、中身の状態を確認する設定
-            const response = await fetch(ngrokUrl, { 
-                mode: 'no-cors',
-                headers: { 'ngrok-skip-browser-warning': 'true' }
-            });
+        async function checkServer() {
+            try {
+                // ngrok特有の警告画面(ERR_NGROK_6024等)をスキップして中身を確認
+                const response = await fetch(ngrokUrl, {
+                    method: 'GET',
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
 
-            // 【重要】もしサーバーが本当に生きていれば、
-            // ここで一定時間後にリダイレクトさせる
-            // 404や502のエラー画面（ngrokの画面）の時は移動させない
-            
-            // fetch(mode: 'no-cors') では中身が見えないため、
-            // 「読み込みが完了した＝ゲーム画面が表示された」とみなすのを
-            // 少し慎重にするために3秒ごとに再試行します
-            console.log("Checking server...");
-            
-            // もしここを通過しても、ngrok 3200が出る場合は
-            // メインプログラム側の ngrok が停止している証拠です。
-        } catch (error) {
-            console.log("Server is offline or maintenance is active.");
+                // response.ok はステータスコードが 200-299 の時だけ true になります。
+                // ngrokのエラー画面（3200番など）は通常 404 や 503 なので、
+                // ゲームが正常に動いている時だけリダイレクトされます。
+                if (response.ok) {
+                    window.location.href = ngrokUrl;
+                }
+            } catch (error) {
+                // サーバーが落ちている（ngrokコマンドが止まっている）間はここに来ます
+                console.log("Server is offline. Keeping maintenance page.");
+            }
         }
-    }
 
-    // 5秒おきにチェックし、もしゲームが起動したら自動で切り替わる
-    setInterval(checkServer, 5000);
-</script>
+        // 10秒ごとにサーバーが復活したかチェックする
+        setInterval(checkServer, 10000);
+
+        // 初回実行
+        checkServer();
+    </script>
 </body>
 </html>
