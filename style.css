@@ -40,3 +40,34 @@ p { font-size: 16px; color: #cccccc; line-height: 1.8; margin: 0; }
     opacity: 0.6;
     letter-spacing: 1px;
 }
+
+/* style.css の一番下に追加してください */
+
+.maintenance-schedule {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 20px 40px;
+    border-radius: 10px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.schedule-label {
+    display: block;
+    font-size: 14px;
+    color: #ffcc00; /* 目立つ黄色 */
+    margin-bottom: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.schedule-date {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.schedule-time {
+    font-size: 18px;
+    color: #ffffff;
+}
