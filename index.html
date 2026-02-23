@@ -37,25 +37,28 @@
             try {
                 const response = await fetch(ngrokUrl, {
                     method: 'GET',
-                    // ngrokの警告画面をスキップする魔法のヘッダー
-                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true' // 警告画面をスキップ
+                    }
                 });
             
-                // ngrokのエラー画面(3200等)の場合、レスポンスヘッダーに 'ngrok-error-code' が含まれます。
-                // これが含まれている場合は「メンテナンス中」とみなし、リダイレクトしません。
-                if (response.ok && !response.headers.get('ngrok-error-code')) {
-                    console.log("Game server is live! Redirecting...");
+                // 【ここが最重要ポイント】
+                // ngrokがエラー画面を出している時、レスポンスヘッダーに必ず 'ngrok-error-code' が含まれます。
+                // これが存在する場合は、たとえ response.ok が true でもリダイレクトさせません。
+                const ngrokError = response.headers.get('ngrok-error-code');
+            
+                if (response.ok && !ngrokError) {
+                    console.log("Game server is truly live! Redirecting...");
                     window.location.href = ngrokUrl;
                 } else {
-                    console.log("Maintenance mode: ngrok is offline (error page detected).");
+                    console.log("Maintenance: ngrok is showing an error page (Code: " + ngrokError + ")");
                 }
             } catch (error) {
-                // 完全に接続できない場合
-                console.log("Server is offline. Staying on maintenance page.");
+                console.log("Server is completely offline. Staying on maintenance page.");
             }
         }
     
-        // 10秒おきに実行
+        // 10秒おきにチェック
         setInterval(checkServer, 10000);
         checkServer();
     </script>
