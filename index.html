@@ -31,25 +31,36 @@
     </div>
 
     <script>
-    const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
-
-    async function checkServer() {
-        try {
-            // mode: 'no-cors' にして、とにかく「何か応答があるか」だけを見る
-            await fetch(ngrokUrl, { mode: 'no-cors' });
+        const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
+        
+        async function checkServer() {
+            try {
+                const response = await fetch(ngrokUrl, {
+                    method: 'GET',
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
             
-            // 応答があれば（エラー画面でも何でも）移動させる
-            console.log("Response received! Redirecting...");
-            window.location.href = ngrokUrl;
-        } catch (error) {
-            console.log("Server is still offline.");
+                // テキストとして中身を確認し、ngrokのエラー特有の文字列が含まれていないかチェック
+                const text = await response.text();
+                
+                // 1. response.ok (200番代) であること
+                // 2. 内容に "ERR_NGROK" という文字が含まれていないこと
+                if (response.ok && !text.includes("ERR_NGROK")) {
+                    console.log("Game server is live! Redirecting...");
+                    window.location.href = ngrokUrl;
+                } else {
+                    console.log("Maintenance mode: ngrok is showing an error page.");
+                }
+            } catch (error) {
+                console.log("Server is offline. Keeping maintenance page.");
+            }
         }
-    }
 
-    // 5秒ごとにチェック
-    setInterval(checkServer, 5000);
+    setInterval(checkServer, 10000);
     checkServer();
-</script>
+    </script>
 </body>
 
 </html>
