@@ -35,31 +35,41 @@
 
         async function checkServer() {
             try {
+                // ngrokの警告を無視して、とりあえず中身を取りに行く
                 const response = await fetch(ngrokUrl, {
-                    method: 'GET',
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true' // 警告画面をスキップ
-                    }
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
             
-                // 【ここが最重要ポイント】
-                // ngrokがエラー画面を出している時、レスポンスヘッダーに必ず 'ngrok-error-code' が含まれます。
-                // これが存在する場合は、たとえ response.ok が true でもリダイレクトさせません。
-                const ngrokError = response.headers.get('ngrok-error-code');
+                const text = await response.text();
             
-                if (response.ok && !ngrokError) {
-                    console.log("Game server is truly live! Redirecting...");
+                // 【ここを調整してください】
+                // 人狼ゲームのログイン画面にあるはずの文字（例: 「人狼」や「ログイン」）
+                // が含まれているかチェックします。
+                const isGameRunning = text.includes("人狼") || text.includes("Wolf") || text.includes("ログイン");
+                
+                // ngrokのエラー文字が含まれていないことも確認
+                const isNotError = !text.includes("ERR_NGROK") && !text.includes("browser-warning");
+            
+                if (isGameRunning && isNotError) {
+                    console.log("Game is detected! Moving now...");
                     window.location.href = ngrokUrl;
                 } else {
-                    console.log("Maintenance: ngrok is showing an error page (Code: " + ngrokError + ")");
+                    console.log("Still maintenance or ngrok page.");
                 }
             } catch (error) {
-                console.log("Server is completely offline. Staying on maintenance page.");
+                // セキュリティ制限（CORS）で中身が読めない場合、ここに来ます。
+                // その場合は「とにかく接続ができた（OPTIONSが200だった）」ことだけを信じて飛ばします。
+                console.log("CORS restriction, but trying to redirect anyway.");
+                
+                // サーバーが本当に落ちていれば、ここでの fetch 自体が失敗するので
+                // 落ちている時はリダイレクトされません。
+                if (error.name !== 'TypeError') {
+                     window.location.href = ngrokUrl;
+                }
             }
         }
     
-        // 10秒おきにチェック
-        setInterval(checkServer, 10000);
+        setInterval(checkServer, 7000); // 7秒ごとにチェック
         checkServer();
     </script>
 </body>
