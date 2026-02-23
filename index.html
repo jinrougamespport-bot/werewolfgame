@@ -30,49 +30,34 @@
         werewolfgame system
     </div>
 
-    <script>
+<script>
         const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
+    // さきほど提供いただいた favicon.ico を判定の証拠にします
+        const checkImageUrl = ngrokUrl + "/static/favicon.ico";
 
-        async function checkServer() {
-            try {
-                // セキュリティ制限を回避しつつ、テキストを取得するために proxy を通すか、
-                // シンプルに fetch の挙動を利用します。
-                const response = await fetch(ngrokUrl, {
-                    headers: { 'ngrok-skip-browser-warning': 'true' }
-                });
-            
-                const text = await response.text();
-            
-                // 1. あなたが指定したキーワードが含まれているか
-                // 2. ngrokのエラー画面ではないか
-                const hasLogin = text.includes("ログイン") || text.includes("新規登録");
-                const isNotError = !text.includes("ERR_NGROK");
-            
-                if (hasLogin && isNotError) {
-                    console.log("Login page detected! Redirecting...");
-                    window.location.href = ngrokUrl;
-                } else {
-                    console.log("Target text not found. Staying in maintenance.");
-                }
-            } catch (error) {
-                // CORSエラー（TypeError）が出た場合でも、
-                // 「接続自体はできている」可能性が高いので、
-                // サーバーが生きていると確信できるなら飛ばす設定にします。
-                console.log("CORS error occurred, but checking connectivity...");
-                
-                // シンプルな接続確認だけ行う
-                fetch(ngrokUrl, { mode: 'no-cors' })
-                    .then(() => {
-                        // 何かしらの応答があれば、ログイン画面へ
-                        window.location.href = ngrokUrl;
-                    })
-                    .catch(() => {
-                        console.log("Server is truly offline.");
-                    });
-            }
+        function checkServer() {
+            if (window.isRedirecting) return;
+
+            // 画像オブジェクトを作成して、ngrok先の画像を読み込ませる
+            const img = new Image();
+
+            img.onload = function() {
+                // 画像が読み込めた ＝ ngrokのエラー画面ではなく、人狼ゲームが起動している！
+                console.log("Werewolf icon detected! Redirecting...");
+                window.isRedirecting = true;
+                window.location.replace(ngrokUrl);
+            };
+
+            img.onerror = function() {
+                // 画像が読めない ＝ サーバー停止中、またはngrokのエラー画面（画像じゃない）
+                console.log("Server is still offline or showing ngrok error.");
+            };
+
+            // キャッシュ（古い記憶）を無視して最新の状態を確認するため、URLに時刻を混ぜる
+            img.src = checkImageUrl + "?t=" + new Date().getTime();
         }
-    
-        // 5秒おきにチェック（少し早めました）
+
+        // 5秒おきにチェック
         setInterval(checkServer, 5000);
         checkServer();
     </script>
