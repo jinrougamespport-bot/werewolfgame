@@ -32,32 +32,31 @@
 
     <script>
         const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
-        
+
         async function checkServer() {
             try {
-                // mode: 'no-cors' を使うことで、セキュリティ制限を回避して
-                // 「サーバーから何らかの反応があるか」だけをチェックします。
-                await fetch(ngrokUrl, {
-                    mode: 'no-cors',
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true'
-                    }
+                const response = await fetch(ngrokUrl, {
+                    method: 'GET',
+                    // ngrokの警告画面をスキップする魔法のヘッダー
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
             
-                // ここまで来れた（catchに行かなかった）ということは、
-                // ngrokのサーバー自体はオンラインであると判断してリダイレクトします。
-                console.log("Server detected! Redirecting...");
-                window.location.href = ngrokUrl;
-                
+                // ngrokのエラー画面(3200等)の場合、レスポンスヘッダーに 'ngrok-error-code' が含まれます。
+                // これが含まれている場合は「メンテナンス中」とみなし、リダイレクトしません。
+                if (response.ok && !response.headers.get('ngrok-error-code')) {
+                    console.log("Game server is live! Redirecting...");
+                    window.location.href = ngrokUrl;
+                } else {
+                    console.log("Maintenance mode: ngrok is offline (error page detected).");
+                }
             } catch (error) {
-                // サーバーが止まっている（ngrokを閉じた）時はここに来ます。
+                // 完全に接続できない場合
                 console.log("Server is offline. Staying on maintenance page.");
             }
         }
     
-        // 10秒おきにチェック
+        // 10秒おきに実行
         setInterval(checkServer, 10000);
-        // 初回実行
         checkServer();
     </script>
 </body>
