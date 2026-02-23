@@ -35,41 +35,45 @@
 
         async function checkServer() {
             try {
-                // ngrokの警告を無視して、とりあえず中身を取りに行く
+                // セキュリティ制限を回避しつつ、テキストを取得するために proxy を通すか、
+                // シンプルに fetch の挙動を利用します。
                 const response = await fetch(ngrokUrl, {
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 });
             
                 const text = await response.text();
             
-                // 【ここを調整してください】
-                // 人狼ゲームのログイン画面にあるはずの文字（例: 「人狼」や「ログイン」）
-                // が含まれているかチェックします。
-                const isGameRunning = text.includes("人狼") || text.includes("Wolf") || text.includes("ログイン");
-                
-                // ngrokのエラー文字が含まれていないことも確認
-                const isNotError = !text.includes("ERR_NGROK") && !text.includes("browser-warning");
+                // 1. あなたが指定したキーワードが含まれているか
+                // 2. ngrokのエラー画面ではないか
+                const hasLogin = text.includes("ログイン") || text.includes("新規登録");
+                const isNotError = !text.includes("ERR_NGROK");
             
-                if (isGameRunning && isNotError) {
-                    console.log("Game is detected! Moving now...");
+                if (hasLogin && isNotError) {
+                    console.log("Login page detected! Redirecting...");
                     window.location.href = ngrokUrl;
                 } else {
-                    console.log("Still maintenance or ngrok page.");
+                    console.log("Target text not found. Staying in maintenance.");
                 }
             } catch (error) {
-                // セキュリティ制限（CORS）で中身が読めない場合、ここに来ます。
-                // その場合は「とにかく接続ができた（OPTIONSが200だった）」ことだけを信じて飛ばします。
-                console.log("CORS restriction, but trying to redirect anyway.");
+                // CORSエラー（TypeError）が出た場合でも、
+                // 「接続自体はできている」可能性が高いので、
+                // サーバーが生きていると確信できるなら飛ばす設定にします。
+                console.log("CORS error occurred, but checking connectivity...");
                 
-                // サーバーが本当に落ちていれば、ここでの fetch 自体が失敗するので
-                // 落ちている時はリダイレクトされません。
-                if (error.name !== 'TypeError') {
-                     window.location.href = ngrokUrl;
-                }
+                // シンプルな接続確認だけ行う
+                fetch(ngrokUrl, { mode: 'no-cors' })
+                    .then(() => {
+                        // 何かしらの応答があれば、ログイン画面へ
+                        window.location.href = ngrokUrl;
+                    })
+                    .catch(() => {
+                        console.log("Server is truly offline.");
+                    });
             }
         }
     
-        setInterval(checkServer, 7000); // 7秒ごとにチェック
+        // 5秒おきにチェック（少し早めました）
+        setInterval(checkServer, 5000);
         checkServer();
     </script>
 </body>
