@@ -32,38 +32,37 @@
 
     <script>
         const ngrokUrl = "https://yawnful-oligarchic-von.ngrok-free.dev";
-        
+
         async function checkServer() {
             try {
+                // 'ngrok-skip-browser-warning' を送って、警告画面を無理やり突破して中身を確認する
                 const response = await fetch(ngrokUrl, {
                     method: 'GET',
                     headers: {
                         'ngrok-skip-browser-warning': 'true'
                     }
                 });
-            
-                // テキストとして中身を確認し、ngrokのエラー特有の文字列が含まれていないかチェック
+
                 const text = await response.text();
-                
-                // 1. response.ok (200番代) であること
-                // 2. 内容に "ERR_NGROK" という文字が含まれていないこと
-                if (response.ok && !text.includes("ERR_NGROK")) {
-                    console.log("Game server is live! Redirecting...");
+
+                // 以下の条件をすべて満たした時だけ「サーバー稼働中」とみなす
+                // 1. レスポンスが正常 (200 OK)
+                // 2. 内容に "ERR_NGROK" (エラー) が含まれていない
+                // 3. 内容に "ngrok-skip-browser-warning" (警告画面のボタン) が含まれていない
+                if (response.ok && !text.includes("ERR_NGROK") && !text.includes("browser-warning")) {
+                    console.log("Game server is truly live! Redirecting...");
                     window.location.href = ngrokUrl;
                 } else {
-                    console.log("Maintenance mode: ngrok is showing an error page.");
+                    console.log("Still in maintenance: ngrok is showing an error or warning page.");
                 }
             } catch (error) {
-                console.log("Server is offline. Keeping maintenance page.");
+                console.log("Server is offline.");
             }
         }
 
-    setInterval(checkServer, 10000);
-    checkServer();
+        // 10秒おきにチェック
+        setInterval(checkServer, 10000);
+        checkServer();
     </script>
 </body>
-
 </html>
-
-
-
